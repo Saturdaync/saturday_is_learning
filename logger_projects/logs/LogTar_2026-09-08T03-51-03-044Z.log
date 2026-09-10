@@ -1,0 +1,6 @@
+[2026-09-08T03:51:03.048Z][ERROR]: main (/Users/Zhuanz/nodejs_learn/test.js:16:12) hello world!
+[2026-09-08T03:51:04.049Z][CRITICAL]: Timeout._onTimeout (/Users/Zhuanz/nodejs_learn/test.js:14:16) this is a critical!
+[2026-09-08T03:51:05.050Z][CRITICAL]: Timeout._onTimeout (/Users/Zhuanz/nodejs_learn/test.js:14:16) this is a critical!
+[2026-09-08T03:51:06.051Z][CRITICAL]: Timeout._onTimeout (/Users/Zhuanz/nodejs_learn/test.js:14:16) this is a critical!
+[2026-09-08T03:51:07.052Z][CRITICAL]: Timeout._onTimeout (/Users/Zhuanz/nodejs_learn/test.js:14:16) this is a critical!
+[2026-09-08T03:51:08.052Z][CRITICAL]: Timeout._onTimeout (/Users/Zhuanz/nodejs_learn/test.js:14:16) this is a critical!
