@@ -1,7 +1,4 @@
-const { time } = require('node:console');
-const { resolve } = require('node:dns');
 const http=require('node:http');
-const path = require('node:path');
 const HTTP_METHODS={
     GET:'GET',
     POST:'POST',
@@ -23,7 +20,6 @@ class Trie{
             console.log('请以/开头')
             return true
         }
-        const check_path=path.split('/')
         if(/\s/.test(path)){
             console.log('URL中不允许空格!')
             return true
@@ -48,7 +44,10 @@ class Trie{
         if(path_api.length<=0)return;
         let node=this.root
         for(let word of path_api){
-            if(!node.children.get(word)){
+            if(word[0]===':'){
+                word=':'
+            }
+            else if(!node.children.get(word)){
                 console.log('不存在')
                 return
             }
@@ -71,16 +70,24 @@ class TrieNode{
         this.children=new Map()
         this.isEndWord=false
         this.handle={}
+        this.params=[]
     }
 
     add(path,handle,method){
-        const now_node=path[0]
+        let now_node=path[0]
         if(path.length===0){
             this.isEndWord=true
             this.handle[method]=handle
             return
         }
-        let newNode=this.children.get(now_node)
+        let newNode
+        if(now_node[0]===':'){
+            newNode=this.children.get(':');
+            this.params.push(now_node.slice(1))
+            now_node=':'
+        }else{
+        newNode=this.children.get(now_node)
+        }
         if(!newNode){
         newNode=new TrieNode()
         this.children.set(now_node,newNode)
@@ -91,7 +98,8 @@ class TrieNode{
     async output(time){
         for(const[key,value] of this.children){
             const space='-'.repeat(time);
-            console.log(`${space}${key}:${value}`)
+            if(key===':'){console.log(`${space}${this.params}:${value}`)}
+            else console.log(`${space}${key}:${value}`)
          await   value.output(time+1)
         }
     }
@@ -103,14 +111,19 @@ function gethandle(){
 function posthandle(){
     console.log('这里我处理了一个POST请求')
 }
+
+
+
 async function test_trie(){
 const trie=new Trie();
-trie.insert("/user/api",gethandle,HTTP_METHODS['GET'])
+trie.insert("/user/api/:userid",gethandle,HTTP_METHODS['GET'])
 trie.insert('/user/id/search',posthandle,HTTP_METHODS['POST'])
 await trie.output()
-trie.search('/user/api',HTTP_METHODS['GET'])
+trie.search('/user/api/:1211',HTTP_METHODS['GET'])
 }
 test_trie()
+
+
 
 
 class Router{
