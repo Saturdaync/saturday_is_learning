@@ -1,3 +1,4 @@
+const { time } = require('node:console');
 const { resolve } = require('node:dns');
 const http=require('node:http');
 const path = require('node:path');
@@ -8,7 +9,7 @@ const HTTP_METHODS={
     DELTER:'DELETE',
     PATCH:'PATCH',
     HEAD:'HEAD',
-    OPTIONS:'POTIONS',
+    OPTIONS:'OPTIONS',
     CONNECT:'CONNECT',
     TRACE:'TRACE'
 };
@@ -17,18 +18,33 @@ class Trie{
         this.root=new TrieNode()
     }
 
-    insert(path,handle){
-        if(path.length<=0){return}
-        const del_path=path.split("")
-        this.root.add(del_path,handle)
+    #checkout(path){
+        if(path[0]!='/'){
+            console.log('请以/开头')
+            return true
+        }
+        const check_path=path.split('/')
+        if(/\s/.test(path)){
+            console.log('URL中不允许空格!')
+            return true
+        }
+        return false
     }
 
-    output(){
-        this.root.output()
+
+    insert(path,handle,method){
+        if(path.length<=0||this.#checkout(path)){return}
+        const del_path=path.split("/").filter(seg=>seg)
+        this.root.add(del_path,handle,method)
     }
 
-    search(path_api){
-        path_api=path_api.split('')
+    async output(){
+        return await this.root.output(1)
+    }
+
+    search(path_api,method){
+        if(this.#checkout(path_api)){return}
+        path_api=path_api.split('/').filter(seg=>seg)
         if(path_api.length<=0)return;
         let node=this.root
         for(let word of path_api){
@@ -40,6 +56,8 @@ class Trie{
         }
         if(node.isEndWord){
             console.log('存在这个api')
+            const fn=node.handle[`${method}`]
+            return fn()
         }
         else{
             console.log('不存在')
@@ -52,40 +70,49 @@ class TrieNode{
     constructor(){
         this.children=new Map()
         this.isEndWord=false
-        this.handle=()=>{console.log('没有设置处理方法')}
+        this.handle={}
     }
 
-    add(path,handle){
+    add(path,handle,method){
         const now_node=path[0]
-        if(!now_node){
+        if(path.length===0){
             this.isEndWord=true
-            this.handle=handle
+            this.handle[method]=handle
             return
         }
-        let newNode=this.children[`${now_node}`]
+        let newNode=this.children.get(now_node)
         if(!newNode){
         newNode=new TrieNode()
         this.children.set(now_node,newNode)
         }
-        newNode.add(path.slice(1),handle)
+        newNode.add(path.slice(1),handle,method)
     }
 
-    output(){
+    async output(time){
         for(const[key,value] of this.children){
-            console.log(`${key}:${value}`)
-            value.output()
+            const space='-'.repeat(time);
+            console.log(`${space}${key}:${value}`)
+         await   value.output(time+1)
         }
     }
 
 }
-function test_trie(){
+function gethandle(){
+    console.log('这里我处理了一个GET请求')
+}
+function posthandle(){
+    console.log('这里我处理了一个POST请求')
+}
+async function test_trie(){
 const trie=new Trie();
-trie.insert("userapi",()=>{console.log(`这是我处理GET请求的一个方法`)})
-trie.output()
-trie.search('666')
-trie.search('userapi')
+trie.insert("/user/api",gethandle,HTTP_METHODS['GET'])
+trie.insert('/user/id/search',posthandle,HTTP_METHODS['POST'])
+await trie.output()
+trie.search('/user/api',HTTP_METHODS['GET'])
 }
 test_trie()
+
+
 class Router{
     constructor(){
         this.router={}
@@ -124,10 +151,10 @@ router.post('/',function handle_POST(request,response){
     console.log('处理了一个POST请求')
     response.end('已经处理了您的POST请求')
 })
-router.printRouter()
 
 function test_server(){
 const PORT=3000
 const server=http.createServer((request,response)=>{router.handleRequest(request,response)})
 server.listen(PORT)
 }
+
