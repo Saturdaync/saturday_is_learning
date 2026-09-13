@@ -1,3 +1,4 @@
+const { resolve } = require('node:dns');
 const http=require('node:http');
 const HTTP_METHODS={
     GET:'GET',
@@ -112,62 +113,24 @@ function posthandle(){
     console.log('这里我处理了一个POST请求')
 }
 
-
-
-async function test_trie(){
 const trie=new Trie();
+async function test_trie(){
 trie.insert("/user/api/:userid",gethandle,HTTP_METHODS['GET'])
 trie.insert('/user/id/search',posthandle,HTTP_METHODS['POST'])
-await trie.output()
-trie.search('/user/api/:1211',HTTP_METHODS['GET'])
 }
 test_trie()
-
-
-
-
-class Router{
-    constructor(){
-        this.router={}
-    }
-    handleRequest(request,response){
-        const{url,method}=request
-        const handler=this.router[`${method} ${url}`]
-        if(!handler){
-            response.end('404 NOT Found!')
-            return console.log('404 Not Found')
-
-        }
-        handler(request,response)
-    }
-    #addRoutes(method,path,handler){
-        this.router[`${method} ${path}`]=handler
-    }
-    get(path,handler){
-        this.#addRoutes(HTTP_METHODS.GET,path,handler)
-    }
-    post(path,handler){
-        this.#addRoutes(HTTP_METHODS.POST,path,handler)
-    }
-    printRouter(){
-        console.log(Object.entries(this.router))
-    }
+function run(router,PORT=3000){
+    if(!(router instanceof Trie))return
+    const server=http.createServer((request,response)=>{
+        const {url,method}=request
+        console.log(url,method)
+        router.search(url,method)
+        response.writeHead(200,{
+            'content-type':'text/plain'
+        })
+        response.end('完毕!')
+    })
+    server.listen(PORT)
 }
-
-
-const router=new Router()
-router.get('/',function handle_GET(request,response){
-    console.log('处理了一个GET请求')
-    response.end('已经处理了您的GET请求')
-})
-router.post('/',function handle_POST(request,response){
-    console.log('处理了一个POST请求')
-    response.end('已经处理了您的POST请求')
-})
-
-function test_server(){
 const PORT=3000
-const server=http.createServer((request,response)=>{router.handleRequest(request,response)})
-server.listen(PORT)
-}
-
+run(trie,PORT)
