@@ -1,0 +1,6 @@
+{
+    "level":3,
+    "log_header":"Saturday",
+    "rolling_time":5,
+    "rolling_size":1024
+}
